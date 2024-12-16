@@ -1,0 +1,9 @@
+database_name,table_name,field_name,data_type,aliases,description,key_words
+assets_maintenance,Maintenance_Contracts,contract_id,INTEGER,"agreement id,service contract id","Primary identifier for maintenance contracts","id,identifier,primary key,contract"
+assets_maintenance,Maintenance_Contracts,company_id,INTEGER,"vendor id,provider id,contractor id","Foreign key reference to the service provider company","id,reference,company,foreign key"
+assets_maintenance,Maintenance_Contracts,contract_type,VARCHAR,"agreement type,service type","Type or category of maintenance contract","type,category,contract,service"
+assets_maintenance,Maintenance_Contracts,start_date,DATE,"commencement date,effective date","Start date of the maintenance contract","start,date,commencement,effective"
+assets_maintenance,Maintenance_Contracts,end_date,DATE,"expiry date,termination date","End date of the maintenance contract","end,date,expiry,termination"
+assets_maintenance,Maintenance_Contracts,contract_value,DECIMAL,"agreement cost,service fee","Total monetary value of the contract","value,cost,fee,amount"
+assets_maintenance,Maintenance_Contracts,payment_terms,VARCHAR,"payment conditions,billing terms","Terms and conditions for contract payments","payment,terms,billing,conditions"
+assets_maintenance,Maintenance_Contracts,service_level,VARCHAR,"service tier,maintenance level","Agreed level of service for maintenance","level,service,tier,agreement"

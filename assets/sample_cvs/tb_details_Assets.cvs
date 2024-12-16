@@ -1,0 +1,11 @@
+database_name,table_name,field_name,data_type,aliases,description,key_words
+assets_maintenance,Assets,asset_id,INTEGER,"equipment id,item id,inventory id","Primary identifier for each asset","id,identifier,primary key,asset"
+assets_maintenance,Assets,asset_type,VARCHAR,"equipment type,item category,asset classification","Type or category of the asset","type,category,classification,asset"
+assets_maintenance,Assets,asset_name,VARCHAR,"equipment name,item name,asset title","Descriptive name of the asset","name,title,identifier,asset"
+assets_maintenance,Assets,asset_description,TEXT,"equipment details,item description,specifications","Detailed description of the asset","description,details,specifications,asset"
+assets_maintenance,Assets,purchase_date,DATE,"acquisition date,buy date,procurement date","Date when the asset was purchased","date,purchase,acquisition,procurement"
+assets_maintenance,Assets,purchase_cost,DECIMAL,"acquisition cost,price,value","Original purchase cost of the asset","cost,price,value,purchase"
+assets_maintenance,Assets,warranty_expiry,DATE,"warranty end,guarantee expiry","Expiration date of the asset warranty","warranty,expiry,guarantee,date"
+assets_maintenance,Assets,maintenance_schedule,VARCHAR,"service schedule,upkeep plan","Maintenance frequency or schedule type","schedule,maintenance,frequency,planning"
+assets_maintenance,Assets,status,VARCHAR,"condition,state,operational status","Current operational status of the asset","status,condition,state,operational"
+assets_maintenance,Assets,location,VARCHAR,"position,placement,site","Physical location of the asset","location,position,place,site"

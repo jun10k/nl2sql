@@ -1,0 +1,116 @@
+database_name,table_name,ddl,aliases,description,key_words
+assets_maintenance,Third_Party_Companies,"CREATE TABLE Third_Party_Companies (
+    company_id INTEGER PRIMARY KEY,
+    company_type VARCHAR(50) NOT NULL,
+    company_name VARCHAR(100) NOT NULL,
+    company_address VARCHAR(200),
+    contact_person VARCHAR(100),
+    contact_email VARCHAR(100),
+    contact_phone VARCHAR(20),
+    registration_date DATE,
+    status VARCHAR(20) DEFAULT 'Active',
+    notes TEXT
+)","vendors,suppliers,contractors,service providers","Table storing information about third-party companies that provide maintenance services","companies,vendors,contractors,maintenance"
+assets_maintenance,Maintenance_Contracts,"CREATE TABLE Maintenance_Contracts (
+    contract_id INTEGER PRIMARY KEY,
+    company_id INTEGER,
+    contract_type VARCHAR(50),
+    start_date DATE,
+    end_date DATE,
+    contract_value DECIMAL(10,2),
+    payment_terms VARCHAR(100),
+    service_level VARCHAR(50),
+    FOREIGN KEY (company_id) REFERENCES Third_Party_Companies(company_id)
+)","service agreements,maintenance agreements,vendor contracts","Table for tracking maintenance contracts with third-party companies","contracts,agreements,maintenance,services"
+assets_maintenance,Assets,"CREATE TABLE Assets (
+    asset_id INTEGER PRIMARY KEY,
+    asset_type VARCHAR(50),
+    asset_name VARCHAR(100),
+    asset_description TEXT,
+    purchase_date DATE,
+    purchase_cost DECIMAL(10,2),
+    warranty_expiry DATE,
+    maintenance_schedule VARCHAR(100),
+    status VARCHAR(20),
+    location VARCHAR(100)
+)","equipment,machinery,facilities,infrastructure","Table containing details of all maintainable assets","assets,equipment,inventory,maintenance"
+assets_maintenance,Maintenance_Records,"CREATE TABLE Maintenance_Records (
+    record_id INTEGER PRIMARY KEY,
+    asset_id INTEGER,
+    contract_id INTEGER,
+    maintenance_date DATE,
+    maintenance_type VARCHAR(50),
+    description TEXT,
+    cost DECIMAL(10,2),
+    next_maintenance_date DATE,
+    FOREIGN KEY (asset_id) REFERENCES Assets(asset_id),
+    FOREIGN KEY (contract_id) REFERENCES Maintenance_Contracts(contract_id)
+)","service records,maintenance history,repair logs","Table recording all maintenance activities performed on assets","maintenance,records,history,services"
+assets_maintenance,Fault_Log,"CREATE TABLE Fault_Log (
+    fault_id INTEGER PRIMARY KEY,
+    asset_id INTEGER,
+    fault_date DATE,
+    fault_type VARCHAR(50),
+    fault_description TEXT,
+    priority VARCHAR(20),
+    status VARCHAR(20),
+    resolution_date DATE,
+    resolution_description TEXT,
+    FOREIGN KEY (asset_id) REFERENCES Assets(asset_id)
+)","issue log,problem records,defect tracking","Table for tracking asset faults and their resolutions","faults,issues,problems,tracking"
+assets_maintenance,Maintenance_Schedule,"CREATE TABLE Maintenance_Schedule (
+    schedule_id INTEGER PRIMARY KEY,
+    asset_id INTEGER,
+    maintenance_type VARCHAR(50),
+    frequency VARCHAR(50),
+    last_maintenance_date DATE,
+    next_maintenance_date DATE,
+    notes TEXT,
+    FOREIGN KEY (asset_id) REFERENCES Assets(asset_id)
+)","service schedule,maintenance planning,preventive maintenance","Table for planning and scheduling regular maintenance activities","schedule,planning,maintenance,preventive"
+assets_maintenance,Maintenance_Staff,"CREATE TABLE Maintenance_Staff (
+    staff_id INTEGER PRIMARY KEY,
+    staff_name VARCHAR(100),
+    staff_role VARCHAR(50),
+    qualifications TEXT,
+    contact_number VARCHAR(20),
+    email VARCHAR(100),
+    department VARCHAR(50),
+    status VARCHAR(20)
+)","technicians,engineers,maintenance personnel","Table containing information about maintenance staff members","staff,technicians,personnel,maintenance"
+assets_maintenance,Work_Orders,"CREATE TABLE Work_Orders (
+    order_id INTEGER PRIMARY KEY,
+    asset_id INTEGER,
+    staff_id INTEGER,
+    order_date DATE,
+    priority VARCHAR(20),
+    description TEXT,
+    status VARCHAR(20),
+    completion_date DATE,
+    notes TEXT,
+    FOREIGN KEY (asset_id) REFERENCES Assets(asset_id),
+    FOREIGN KEY (staff_id) REFERENCES Maintenance_Staff(staff_id)
+)","maintenance requests,service orders,job tickets","Table for tracking maintenance work orders","orders,work,maintenance,tracking"
+assets_maintenance,Spare_Parts,"CREATE TABLE Spare_Parts (
+    part_id INTEGER PRIMARY KEY,
+    part_name VARCHAR(100),
+    part_description TEXT,
+    quantity_in_stock INTEGER,
+    minimum_quantity INTEGER,
+    unit_cost DECIMAL(10,2),
+    supplier_id INTEGER,
+    location VARCHAR(100),
+    last_ordered_date DATE,
+    FOREIGN KEY (supplier_id) REFERENCES Third_Party_Companies(company_id)
+)","inventory,parts catalog,maintenance supplies","Table managing spare parts inventory for maintenance","parts,inventory,supplies,maintenance"
+assets_maintenance,Asset_Documents,"CREATE TABLE Asset_Documents (
+    document_id INTEGER PRIMARY KEY,
+    asset_id INTEGER,
+    document_type VARCHAR(50),
+    document_name VARCHAR(100),
+    file_path VARCHAR(200),
+    upload_date DATE,
+    description TEXT,
+    version VARCHAR(20),
+    FOREIGN KEY (asset_id) REFERENCES Assets(asset_id)
+)","documentation,manuals,certificates","Table storing documents related to assets","documents,manuals,files,assets"

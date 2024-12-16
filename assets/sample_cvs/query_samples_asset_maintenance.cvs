@@ -1,0 +1,68 @@
+database_name,query,description,key_words
+"[assets_maintenance]","[""SELECT c.company_name, c.company_type, COUNT(m.maintenance_contract_id) as contract_count 
+FROM Third_Party_Companies c 
+LEFT JOIN Maintenance_Contracts m ON c.company_id = m.maintenance_contract_company_id 
+GROUP BY c.company_id, c.company_name, c.company_type""]","Analyze maintenance contract distribution across companies","contracts,companies,analysis,maintenance"
+"[assets_maintenance]","[""SELECT a.asset_id, a.asset_details, f.fault_description, f.fault_log_entry_datetime 
+FROM Assets a 
+JOIN Fault_Log f ON a.asset_id = f.asset_id 
+WHERE f.fault_log_entry_datetime >= DATE('now', '-30 days')""]","Recent fault analysis for assets","faults,assets,recent,maintenance"
+"[assets_maintenance]","[""SELECT e.engineer_id, s.skill_name, COUNT(ev.engineer_visit_id) as visit_count 
+FROM Engineers e 
+JOIN Engineer_Skills es ON e.engineer_id = es.engineer_id 
+JOIN Skills s ON es.skill_id = s.skill_id 
+LEFT JOIN Engineer_Visits ev ON e.engineer_id = ev.engineer_id 
+GROUP BY e.engineer_id, s.skill_name""]","Engineer skills and visit frequency analysis","engineers,skills,visits,analysis"
+"[assets_maintenance]","[""SELECT a.asset_id, a.asset_details, a.asset_make, a.asset_model,
+COUNT(f.fault_log_entry_id) as fault_count
+FROM Assets a
+LEFT JOIN Fault_Log f ON a.asset_id = f.asset_id
+GROUP BY a.asset_id
+HAVING fault_count > 5
+ORDER BY fault_count DESC""]","Identify problematic assets by fault frequency","assets,faults,problems,analysis"
+"[assets_maintenance]","[""SELECT mc.maintenance_contract_id, c.company_name,
+mc.contract_start_date, mc.contract_end_date,
+COUNT(a.asset_id) as assets_covered
+FROM Maintenance_Contracts mc
+JOIN Third_Party_Companies c ON mc.maintenance_contract_company_id = c.company_id
+LEFT JOIN Assets a ON mc.maintenance_contract_id = a.maintenance_contract_id
+WHERE mc.contract_end_date <= DATE('now', '+60 days')
+GROUP BY mc.maintenance_contract_id""]","Contract expiration and asset coverage analysis","contracts,expiry,assets,analysis"
+"[assets_maintenance]","[""SELECT STRFTIME('%Y-%m', f.fault_log_entry_datetime) as month,
+a.asset_make, COUNT(*) as fault_count
+FROM Fault_Log f
+JOIN Assets a ON f.asset_id = a.asset_id
+GROUP BY month, a.asset_make
+ORDER BY month DESC, fault_count DESC""]","Monthly fault trends by asset manufacturer","trends,faults,analysis,monthly"
+"[assets_maintenance]","[""SELECT a.asset_id, a.asset_details,
+JULIANDAY('now') - JULIANDAY(MAX(f.fault_log_entry_datetime)) as days_since_last_fault
+FROM Assets a
+LEFT JOIN Fault_Log f ON a.asset_id = f.asset_id
+GROUP BY a.asset_id
+HAVING days_since_last_fault > 180
+ORDER BY days_since_last_fault DESC""]","Asset reliability analysis","reliability,assets,analysis,maintenance"
+"[assets_maintenance]","[""SELECT c.company_name, c.company_type,
+AVG(JULIANDAY(mc.contract_end_date) - JULIANDAY(mc.contract_start_date)) as avg_contract_duration
+FROM Third_Party_Companies c
+JOIN Maintenance_Contracts mc ON c.company_id = mc.maintenance_contract_company_id
+GROUP BY c.company_id
+ORDER BY avg_contract_duration DESC""]","Contract duration analysis by company","contracts,duration,analysis,companies"
+"[assets_maintenance]","[""SELECT a.asset_make, a.asset_model,
+AVG(JULIANDAY(a.asset_disposed_date) - JULIANDAY(a.asset_acquired_date)) as avg_lifetime_days
+FROM Assets a
+WHERE a.asset_disposed_date IS NOT NULL
+GROUP BY a.asset_make, a.asset_model
+ORDER BY avg_lifetime_days DESC""]","Asset lifecycle analysis","lifecycle,assets,analysis,duration"
+"[assets_maintenance]","[""SELECT f1.asset_id, a.asset_details,
+f1.fault_description as initial_fault,
+f2.fault_description as repeat_fault,
+JULIANDAY(f2.fault_log_entry_datetime) - JULIANDAY(f1.fault_log_entry_datetime) as days_between_faults
+FROM Fault_Log f1
+JOIN Fault_Log f2 ON f1.asset_id = f2.asset_id
+JOIN Assets a ON f1.asset_id = a.asset_id
+WHERE f2.fault_log_entry_datetime > f1.fault_log_entry_datetime
+AND f2.fault_description LIKE '%' || f1.fault_description || '%'
+ORDER BY days_between_faults""]","Recurring fault pattern analysis","patterns,faults,analysis,recurring"
+table_name,query,description
+customers,"SELECT * FROM customers WHERE region = 'West'","Find all customers in the Western region"
+orders,"SELECT COUNT(*) FROM orders GROUP BY customer_id","Count the number of orders per customer"

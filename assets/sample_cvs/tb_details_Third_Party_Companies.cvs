@@ -1,0 +1,11 @@
+ database_name,table_name,field_name,data_type,aliases,description,key_words
+assets_maintenance,Third_Party_Companies,company_id,INTEGER,"vendor id,supplier id,contractor id","Primary identifier for third-party companies","id,identifier,primary key,company"
+assets_maintenance,Third_Party_Companies,company_type,VARCHAR,"vendor type,supplier type,contractor type","Type of company (Supplier/Contractor)","type,category,classification,vendor"
+assets_maintenance,Third_Party_Companies,company_name,VARCHAR,"vendor name,supplier name,business name","Official registered company name","name,company,business,organization"
+assets_maintenance,Third_Party_Companies,company_address,VARCHAR,"vendor location,business address,office location","Physical business address","address,location,contact,office"
+assets_maintenance,Third_Party_Companies,partner_id,INTEGER,"partner id,provider id,firm id","Unique identifier for service providers","id,key,identifier,reference"
+assets_maintenance,Third_Party_Companies,business_type,VARCHAR,"business type,service type,organization type","Classification of service provider","type,classification,category,business"
+assets_maintenance,Third_Party_Companies,organization_name,VARCHAR,"organization name,provider name,firm name","Legal business name","name,legal,business,organization"
+assets_maintenance,Third_Party_Companies,office_address,VARCHAR,"office address,location,headquarters","Company's primary address","address,location,office,contact"
+assets_maintenance,Third_Party_Companies,supplementary_info,VARCHAR,"additional info,notes,remarks","Supplementary company information","details,information,notes,additional"
+assets_maintenance,Third_Party_Companies,company_metadata,VARCHAR,"extra details,comments,metadata","Additional company metadata","metadata,details,extra,information"
