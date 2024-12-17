@@ -14,7 +14,7 @@ class EmbeddingService:
         self.model_manager = ModelManager()
         
         # Get embedding model from model manager
-        self.embed_model = self.model_manager.get_embedding_model(EmbeddingType.QWEN)
+        self.embed_model = self.model_manager.get_embedding_model(EmbeddingType.QWEN_DOCUMENT)
         
         # Initialize PostgreSQL connection
         self.connection_string = os.getenv(

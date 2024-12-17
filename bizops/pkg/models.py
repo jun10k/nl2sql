@@ -1,18 +1,26 @@
 from typing import Optional, Dict, Any
 from enum import Enum
-from llama_index.llms import OpenAI, Anthropic, ModelScopeLLM
-from llama_index.embeddings import OpenAIEmbedding, ModelScopeEmbedding
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.anthropic import Anthropic
+from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.dashscope import (
+    DashScopeEmbedding,
+    DashScopeTextEmbeddingModels,
+    DashScopeTextEmbeddingType,
+)
 import os
 
 class LLMType(Enum):
     GPT4O = "gpt-4-0613"
     GPT4O_TURBO = "gpt-4-0125-preview"
     CLAUDE = "claude-2"
-    QWEN = "qwen-max"
+    QWEN = "qwen-plus"
 
 class EmbeddingType(Enum):
-    OPENAI = "text-embedding-ada-002"
-    QWEN = "text2vec-base-chinese"
+    OPENAI = "text-embedding-3-large"
+    QWEN_DOCUMENT = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V3
+    QWEN_QUERY = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V3
 
 class ModelManager:
     _instance = None
@@ -72,12 +80,12 @@ class ModelManager:
                 model=model_type.value,
                 **kwargs
             )
-        elif model_type == EmbeddingType.QWEN:
-            model = ModelScopeEmbedding(
-                api_key=self.modelscope_api_key,
-                model=model_type.value,
-                **kwargs
-            )
+        elif model_type == EmbeddingType.QWEN_DOCUMENT:
+            model = DashScopeEmbedding(model_name=model_type.value, 
+                                       text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,)
+        elif model_type == EmbeddingType.QWEN_QUERY:
+            model = DashScopeEmbedding(model_name=model_type.value, 
+                                       text_type=DashScopeTextEmbeddingType.TEXT_TYPE_QUERY,)
         else:
             raise ValueError(f"Unsupported embedding type: {model_type}")
 

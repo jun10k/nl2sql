@@ -4,15 +4,30 @@ version = "0.1.0"
 description = ""
 authors = ["Jun Wan <wanjun81@gmail.com>"]
 readme = "README.md"
+packages = [{include = "bizops"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "~3.11.0"
 fastapi = "0.115.6"
 uvicorn = "0.32.1"
 pydantic = "2.9.2"
 pydantic_settings = "2.7.0"
 llama-index = "0.12.3"
 llama-index-vector-stores-postgres = "0.4.0"
+llama-index-llms-openai = "0.3.10"
+llama-index-llms-anthropic = "0.6.1"
+llama-index-llms-dashscope = "0.3.0"
+llama-index-embeddings-dashscope = "0.3.0"
+sqlalchemy = "2.0.36"
+pandas = "2.2.3"
+pgvector = "0.3.6"
+python-multipart = "0.0.19"
+aiofiles = "24.1.0"
+asyncpg = "0.30.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "8.3.4"
+httpx = "0.28.1"
 
 [build-system]
 requires = ["poetry-core"]

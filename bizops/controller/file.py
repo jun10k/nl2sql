@@ -5,6 +5,7 @@ from typing import List, Dict, Literal, Type, TypeVar, Any
 from fastapi import UploadFile
 from bizops.services.embedding import EmbeddingService
 import csv
+import aiofiles
 
 # Create uploads directory if it doesn't exist
 UPLOAD_DIR = "uploads"
@@ -45,20 +46,22 @@ class FileController:
             raise ValueError(f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}")
 
     @staticmethod
-    def save_file(file: UploadFile, file_path: str) -> None:
+    async def save_file(file: UploadFile, file_path: str) -> None:
         """Save the uploaded file to disk"""
         try:
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+            # Use aiofiles for async file operations
+            async with aiofiles.open(file_path, "wb") as buffer:
+                content = await file.read()
+                await buffer.write(content)
         except Exception as e:
             raise ValueError(f"Failed to save file: {str(e)}")
 
-    def process_csv_file(self, file: UploadFile, model_class: Type[Any]) -> List[Any]:
+    async def process_csv_file(self, file: UploadFile, model_class: Type[Any]) -> List[Any]:
         """Process a CSV file and convert its contents to a list of model objects"""
         try:
-            # Read the CSV file content
-            content = file.file.read().decode('utf-8')
-            file.file.seek(0)  # Reset file pointer for potential future reads
+            # Read the CSV file content asynchronously
+            content = (await file.read()).decode('utf-8')
+            await file.seek(0)  # Reset file pointer for potential future reads
             
             # Parse CSV content
             reader = csv.DictReader(content.splitlines())
@@ -85,7 +88,7 @@ class FileController:
         except Exception as e:
             raise ValueError(f"Failed to process CSV file: {str(e)}")
 
-    def handle_file_upload(self, file: UploadFile, database_name: str) -> Dict:
+    async def handle_file_upload(self, file: UploadFile, database_name: str) -> Dict:
         """Handle the complete file upload process"""
         if not database_name:
             raise ValueError("Database name is required")
@@ -105,7 +108,7 @@ class FileController:
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
         
         # Save the file
-        self.save_file(file, file_path)
+        await self.save_file(file, file_path)
         
         # Process the file based on its type
         if file_type == "database":

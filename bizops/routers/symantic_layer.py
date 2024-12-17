@@ -49,7 +49,7 @@ class UpdateRequest(BaseModel):
     items: Union[List[DatabaseInfo], List[TableInfo], List[QueryExample], List[TableDetails]]
 
 @router.post("/database/{database_name}/update/database-info", status_code=status.HTTP_201_CREATED)
-def update_database_info(
+async def update_database_info(
     database_name: str,
     file: Optional[UploadFile] = File(None),
     data: Optional[UpdateRequest] = Body(None)
@@ -69,9 +69,9 @@ def update_database_info(
                 )
             # Process the file
             database_name = file.filename.replace("db_", "").replace(".csv", "")
-            result = db_controller.process_database_metadata(file, database_name)
+            result = await db_controller.process_database_metadata(file, database_name)
         elif data:
-            result = db_controller.update_database_info(database_name, data.items)
+            result = await db_controller.update_database_info(database_name, data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -90,7 +90,7 @@ def update_database_info(
         )
 
 @router.post("/database/{database_name}/update/table-info", status_code=status.HTTP_201_CREATED)
-def update_table_info(
+async def update_table_info(
     database_name: str,
     file: Optional[UploadFile] = File(None),
     data: Optional[UpdateRequest] = Body(None)
@@ -110,9 +110,9 @@ def update_table_info(
                 )
             # Process the file
             table_name = file.filename.replace("tb_", "").replace(".csv", "")
-            result = db_controller.process_table_metadata(file, table_name)
+            result = await db_controller.process_table_metadata(file, table_name)
         elif data:
-            result = db_controller.update_table_info(database_name, data.items)
+            result = await db_controller.update_table_info(database_name, data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -131,7 +131,7 @@ def update_table_info(
         )
 
 @router.post("/database/{database_name}/update/query-examples", status_code=status.HTTP_201_CREATED)
-def update_query_examples(
+async def update_query_examples(
     database_name: str,
     file: Optional[UploadFile] = File(None),
     data: Optional[UpdateRequest] = Body(None)
@@ -151,9 +151,9 @@ def update_query_examples(
                 )
             # Process the file
             table_name = file.filename.replace("sample_", "").replace(".csv", "")
-            result = db_controller.process_query_examples(file, table_name)
+            result = await db_controller.process_query_examples(file, table_name)
         elif data:
-            result = db_controller.update_query_examples(database_name, data.items)
+            result = await db_controller.update_query_examples(database_name, data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -172,7 +172,7 @@ def update_query_examples(
         )
 
 @router.post("/database/{database_name}/table/{table_name}/update/table-details", status_code=status.HTTP_201_CREATED)
-def update_table_details(
+async def update_table_details(
     database_name: str,
     table_name: str,
     file: Optional[UploadFile] = File(None),
@@ -190,10 +190,10 @@ def update_table_details(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     content={"message": "File name must start with 'tb_details_'"}
                 )
-            items = file_controller.process_csv_file(file, TableDetails)
-            db_controller.update_table_details(database_name, table_name, items)
+            items = await file_controller.process_csv_file(file, TableDetails)
+            await db_controller.update_table_details(database_name, table_name, items)
         elif data:
-            db_controller.update_table_details(database_name, table_name, data.items)
+            await db_controller.update_table_details(database_name, table_name, data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -211,12 +211,12 @@ def update_table_details(
         )
 
 @router.get("/database/{database_name}/table/{table_name}/table-details")
-def list_table_details(database_name: str, table_name: str) -> JSONResponse:
+async def list_table_details(database_name: str, table_name: str) -> JSONResponse:
     """
     List all table details for a specific table in a database
     """
     try:
-        table_details = db_controller.get_table_details(database_name, table_name)
+        table_details = await db_controller.get_table_details(database_name, table_name)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"table_details": table_details}
@@ -227,34 +227,34 @@ def list_table_details(database_name: str, table_name: str) -> JSONResponse:
             content={"message": str(e)}
         )
 
-@router.get("/databases", response_model=List[str])
-def list_databases() -> List[str]:
+@router.get("/databases")
+async def list_databases() -> List[str]:
     """List all databases in symantic layer"""
     try:
-        return db_controller.list_databases()
+        return await db_controller.list_databases()
     except Exception as e:
         raise Exception(
             f"Failed to list databases: {str(e)}"
         )
 
-@router.get("/database/{database_name}/tables", response_model=List[str])
-def list_tables(database_name: str) -> List[str]:
+@router.get("/database/{database_name}/tables")
+async def list_tables(database_name: str) -> List[str]:
     """List all tables in specific database"""
     try:
-        return db_controller.list_tables(database_name)
+        return await db_controller.list_tables(database_name)
     except Exception as e:
         raise Exception(
             f"Failed to list tables: {str(e)}"
         )
 
 @router.get("/database/{database_name}/query-examples")
-def list_query_examples(
+async def list_query_examples(
     database_name: str,
     table_name: str
 ) -> List[Dict]:
     """List sample queries for a database or specific table"""
     try:
-        return db_controller.list_query_examples(database_name, table_name)
+        return await db_controller.list_query_examples(database_name, table_name)
     except Exception as e:
         raise Exception(
             f"Failed to list query examples: {str(e)}"
