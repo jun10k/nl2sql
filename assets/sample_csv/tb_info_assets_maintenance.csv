@@ -1,4 +1,4 @@
-database_name,table_name,ddl,aliases,description,key_words
+database_name,table_name,ddl,aliases,description,keywords
 assets_maintenance,Third_Party_Companies,"CREATE TABLE Third_Party_Companies (
     company_id INTEGER PRIMARY KEY,
     company_type VARCHAR(50) NOT NULL,

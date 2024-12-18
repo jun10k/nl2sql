@@ -1,4 +1,4 @@
-database_name,query,description,key_words
+database_name,query,description,keywords
 "[assets_maintenance]","[""SELECT c.company_name, c.company_type, COUNT(m.maintenance_contract_id) as contract_count 
 FROM Third_Party_Companies c 
 LEFT JOIN Maintenance_Contracts m ON c.company_id = m.maintenance_contract_company_id 

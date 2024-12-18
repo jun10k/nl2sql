@@ -9,27 +9,29 @@ class DBController:
         self.postgres_service = PostgresService()
         self.vector_service = VectorService()
 
-    async def process_database_metadata(self, file: UploadFile, database_name: str) -> None:
+    async def process_database_info(self, file: UploadFile) -> None:
         """Process and store database metadata"""
         try:
             # Read CSV file
             df = pd.read_csv(file.file)
-            
+
             # Update PostgreSQL database
-            await self.postgres_service.update_database_info(df, database_name)
-            
-            # Update vector database
-            await self.vector_service.update_database_info(df, database_name)
+            self.postgres_service.update_database_info(df)
+
         except Exception as e:
-            raise Exception(f"Failed to process database metadata: {str(e)}")
+            raise Exception(f"Failed to process database info: {str(e)}")
         finally:
             file.file.close()
 
-    async def process_table_metadata(self, file: UploadFile, table_name: str) -> None:
+    async def process_table_info(self, file: UploadFile, table_name: str) -> None:
         """Process and store table metadata"""
         try:
             # Read CSV file
             df = pd.read_csv(file.file)
+            
+            # Convert string to list, then to PostgreSQL array format
+            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')])
+            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')])
             
             # Update PostgreSQL database
             await self.postgres_service.update_table_info(df, table_name)
@@ -37,23 +39,23 @@ class DBController:
             # Update vector database
             await self.vector_service.update_table_info(df, table_name)
         except Exception as e:
-            raise Exception(f"Failed to process table metadata: {str(e)}")
+            raise Exception(f"Failed to process table info: {str(e)}")
         finally:
             file.file.close()
 
-    async def process_query_examples(self, file: UploadFile, table_name: str) -> None:
+    async def process_query_examples(self, file: UploadFile, database_name: str) -> None:
         """Process and store sample data"""
         try:
             # Read CSV file
             df = pd.read_csv(file.file)
             
             # Update PostgreSQL database
-            await self.postgres_service.update_sample_data(df, table_name)
+            await self.postgres_service.update_query_examples(df, database_name)
             
             # Update vector database
-            await self.vector_service.update_sample_vectors(df, table_name)
+            await self.vector_service.update_sample_vectors(df, database_name)
         except Exception as e:
-            raise Exception(f"Failed to process sample data: {str(e)}")
+            raise Exception(f"Failed to process query examples: {str(e)}")
         finally:
             file.file.close()
 
@@ -108,9 +110,9 @@ class DBController:
             # Update vector database
             await self.vector_service.update_table_info(df, database_name)
         except Exception as e:
-            raise Exception(f"Failed to update table information: {str(e)}")
+            raise Exception(f"Failed to update table info: {str(e)}")
 
-    async def update_database_info(self, database_name: str, items: list) -> None:
+    async def update_database_info(self, items: list) -> None:
         """Update database information from JSON data"""
         try:
             # Ensure items is a list of dictionaries before converting to DataFrame
@@ -121,12 +123,10 @@ class DBController:
             df = pd.DataFrame(items)
             
             # Update PostgreSQL database
-            await self.postgres_service.update_database_info(df, database_name)
-            
-            # Update vector database
-            await self.vector_service.update_database_info(df, database_name)
+            await self.postgres_service.update_database_info(df)
+
         except Exception as e:
-            raise Exception(f"Failed to update database information: {str(e)}")
+            raise Exception(f"Failed to update database info: {str(e)}")
 
     async def update_table_details(self, database_name: str, table_name: str, items: list) -> None:
         """Update table details information from JSON data"""

@@ -13,9 +13,8 @@ class VectorService:
     def update_database_info(self, df: pd.DataFrame, database_name: str) -> None:
         """Update database metadata vectors in PostgreSQL"""
         try:
-            # Generate embeddings for the metadata descriptions
-            descriptions = df['description'].tolist()
-            embeddings = self.embedding_service.get_embeddings(descriptions)
+            # Generate embeddings for the database info
+            embeddings = self.embedding_service.process_database_info(df, database_name)
             
             # Add embeddings to the DataFrame
             df['embedding'] = [Vector(emb) for emb in embeddings]
@@ -167,16 +166,16 @@ class VectorService:
             with self.engine.connect() as conn:
                 conn.execute(text(f"""
                     INSERT INTO table_details_vectors 
-                    (database_name, table_name, field_name, data_type, aliases, description, key_words, embedding)
+                    (database_name, table_name, field_name, data_type, aliases, description, keywords, embedding)
                     SELECT :database_name as database_name, :table_name as table_name,
-                           field_name, data_type, aliases, description, key_words, embedding
+                           field_name, data_type, aliases, description, keywords, embedding
                     FROM {temp_table}
                     ON CONFLICT (database_name, table_name, field_name)
                     DO UPDATE SET
                         data_type = EXCLUDED.data_type,
                         aliases = EXCLUDED.aliases,
                         description = EXCLUDED.description,
-                        key_words = EXCLUDED.key_words,
+                        keywords = EXCLUDED.keywords,
                         embedding = EXCLUDED.embedding
                 """), {"database_name": database_name, "table_name": table_name})
                 

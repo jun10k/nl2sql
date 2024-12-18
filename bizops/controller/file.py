@@ -74,7 +74,7 @@ class FileController:
                 
                 # Convert string lists to actual lists
                 for key, value in cleaned_row.items():
-                    if key in ['aliases', 'key_words', 'query']:
+                    if key in ['aliases', 'keywords', 'query']:
                         if value:
                             cleaned_row[key] = [item.strip() for item in value.split(',')]
                         else:

@@ -1,4 +1,4 @@
- database_name,table_name,field_name,data_type,aliases,description,key_words
+database_name,table_name,field_name,data_type,aliases,description,keywords
 assets_maintenance,Third_Party_Companies,company_id,INTEGER,"vendor id,supplier id,contractor id","Primary identifier for third-party companies","id,identifier,primary key,company"
 assets_maintenance,Third_Party_Companies,company_type,VARCHAR,"vendor type,supplier type,contractor type","Type of company (Supplier/Contractor)","type,category,classification,vendor"
 assets_maintenance,Third_Party_Companies,company_name,VARCHAR,"vendor name,supplier name,business name","Official registered company name","name,company,business,organization"

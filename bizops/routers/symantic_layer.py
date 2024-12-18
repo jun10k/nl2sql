@@ -20,7 +20,7 @@ class DatabaseInfo(BaseModel):
     database_name: str
     aliases: List[str]
     description: str
-    key_words: List[str]
+    keywords: List[str]
 
 class TableInfo(BaseModel):
     database_name: str
@@ -28,7 +28,7 @@ class TableInfo(BaseModel):
     aliases: List[str]
     description: str
     ddl: str
-    key_words: List[str]
+    keywords: List[str]
 
 class TableDetails(BaseModel):
     database_name: str
@@ -37,20 +37,19 @@ class TableDetails(BaseModel):
     data_type: str
     aliases: List[str]
     description: str
-    key_words: List[str]
+    keywords: List[str]
 
 class QueryExample(BaseModel):
     database_name: List[str]
     query: List[str]
     description: str
-    key_words: List[str]
+    keywords: List[str]
 
 class UpdateRequest(BaseModel):
     items: Union[List[DatabaseInfo], List[TableInfo], List[QueryExample], List[TableDetails]]
 
-@router.post("/database/{database_name}/update/database-info", status_code=status.HTTP_201_CREATED)
+@router.post("/database/update/database-info", status_code=status.HTTP_201_CREATED)
 async def update_database_info(
-    database_name: str,
     file: Optional[UploadFile] = File(None),
     data: Optional[UpdateRequest] = Body(None)
 ) -> JSONResponse:
@@ -68,10 +67,9 @@ async def update_database_info(
                     content={"detail": "File must be prefixed with 'db_' for database information upload"}
                 )
             # Process the file
-            database_name = file.filename.replace("db_", "").replace(".csv", "")
-            result = await db_controller.process_database_metadata(file, database_name)
+            result = await db_controller.process_database_info(file)
         elif data:
-            result = await db_controller.update_database_info(database_name, data.items)
+            result = await db_controller.update_database_info(data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -109,8 +107,7 @@ async def update_table_info(
                     content={"detail": "File must be prefixed with 'tb_' for table information upload"}
                 )
             # Process the file
-            table_name = file.filename.replace("tb_", "").replace(".csv", "")
-            result = await db_controller.process_table_metadata(file, table_name)
+            result = await db_controller.process_table_info(file, database_name)
         elif data:
             result = await db_controller.update_table_info(database_name, data.items)
         else:
@@ -150,8 +147,7 @@ async def update_query_examples(
                     content={"detail": "File must be prefixed with 'sample_' for query examples upload"}
                 )
             # Process the file
-            table_name = file.filename.replace("sample_", "").replace(".csv", "")
-            result = await db_controller.process_query_examples(file, table_name)
+            result = await db_controller.process_query_examples(file, database_name)
         elif data:
             result = await db_controller.update_query_examples(database_name, data.items)
         else:

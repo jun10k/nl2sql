@@ -1,2 +1,2 @@
-database_name,aliases,description,key_words
+database_name,aliases,description,keywords
 assets_maintenance,"asset management system,maintenance tracking system,equipment management database","Comprehensive database for managing and tracking asset maintenance, including third-party contractors, maintenance schedules, and fault logging","assets,maintenance,management,tracking"

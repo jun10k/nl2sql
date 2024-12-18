@@ -1,20 +1,25 @@
-import pandas as pd
+import json
+import os
 from typing import List, Dict, Any
+
+import pandas as pd
+from fastapi import HTTPException
 from llama_index.core import Document
 from llama_index.vector_stores.postgres import PGVectorStore
 from sqlalchemy import create_engine
-import os
-from fastapi import HTTPException
-import json
-from bizops.pkg.models import ModelManager, EmbeddingType, LLMType
+
+from bizops.pkg.models import ModelManager, EmbeddingType
+
 
 class EmbeddingService:
+    _embedding_type : EmbeddingType = EmbeddingType.AZURE_EMBEDDING
+    
     def __init__(self):
         # Initialize model manager
         self.model_manager = ModelManager()
         
         # Get embedding model from model manager
-        self.embed_model = self.model_manager.get_embedding_model(EmbeddingType.QWEN_DOCUMENT)
+        self.embed_model = self.model_manager.get_embedding_model(self._embedding_type)
         
         # Initialize PostgreSQL connection
         self.connection_string = os.getenv(
@@ -31,56 +36,53 @@ class EmbeddingService:
             user="postgres",
             password="postgres",
             table_name="embeddings",
-            embed_dim=768  # Qwen embedding dimension
+            embed_dim=EmbeddingType.AZURE_DIMENSION.value
         )
 
-    def process_database_file(self, file_path: str, database_name: str) -> Dict[str, Any]:
-        """Process database description CSV file"""
+    def process_database_info(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Process database information and generate embeddings
+        
+        Args:
+            df: DataFrame containing database metadata
+            
+        Returns:
+            DataFrame with embeddings added
+        """
         try:
-            df = pd.read_csv(file_path)
-            required_columns = {'table_name',  'aliases', 'description', 'key_words', 'ddl'}
-            if not all(col in df.columns for col in required_columns):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Database CSV must contain columns: {required_columns}"
-                )
+            if "embedding" not in df.columns:
+                df["embedding"] = None  # Initialize the column
+            # Process each record individually
+            for idx, row in df.iterrows():
+                text_parts = []
+                
+                # Add each field to text parts if it exists
+                if 'database_name' in row and row['database_name']:
+                    text_parts.append(f"Database name: {row['database_name']}")
+                
+                if 'aliases' in row and row['aliases']:
+                    text_parts.append(f"Aliases: {row['aliases']}")
+                
+                if 'description' in row and row['description']:
+                    text_parts.append(f"Description: {row['description']}")
+                
+                if 'keywords' in row and row['keywords']:
+                    text_parts.append(f"Keywords: {row['keywords']}")
+                
+                # Combine all text parts and generate embedding
+                combined_text = "\n".join(text_parts)
+                embedding = self.embed_model.get_text_embedding(combined_text)
+                df.at[idx, "embedding"] = embedding
+            
+            return df
 
-            # Create database description documents
-            texts = []
-            for _, row in df.iterrows():
-                text = f"Database '{database_name}': {row['description']}. "
-                if pd.notna(row['properties']):
-                    text += f"Properties: {row['properties']}"
-                texts.append(text)
-
-            # Create embeddings
-            self._create_embeddings(
-                texts=texts,
-                metadata={
-                    "database": database_name,
-                    "type": "database_description"
-                }
-            )
-
-            return {
-                "status": "success",
-                "database": database_name,
-                "descriptions_processed": len(texts)
-            }
-
-        except HTTPException as he:
-            raise he
         except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to process database description file: {str(e)}"
-            )
+            raise Exception(f"Failed to process database info: {str(e)}")
 
     def process_table_file(self, file_path: str, database_name: str) -> Dict[str, Any]:
         """Process table description CSV file"""
         try:
             df = pd.read_csv(file_path)
-            required_columns = {'table_name', 'column_name', 'aliases', 'data_type', 'description', 'key_words'}
+            required_columns = {'table_name', 'column_name', 'aliases', 'data_type', 'description', 'keywords'}
             if not all(col in df.columns for col in required_columns):
                 raise HTTPException(
                     status_code=400,

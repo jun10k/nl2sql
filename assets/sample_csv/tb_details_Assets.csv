@@ -1,4 +1,4 @@
-database_name,table_name,field_name,data_type,aliases,description,key_words
+database_name,table_name,field_name,data_type,aliases,description,keywords
 assets_maintenance,Assets,asset_id,INTEGER,"equipment id,item id,inventory id","Primary identifier for each asset","id,identifier,primary key,asset"
 assets_maintenance,Assets,asset_type,VARCHAR,"equipment type,item category,asset classification","Type or category of the asset","type,category,classification,asset"
 assets_maintenance,Assets,asset_name,VARCHAR,"equipment name,item name,asset title","Descriptive name of the asset","name,title,identifier,asset"

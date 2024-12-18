@@ -1,26 +1,31 @@
-from typing import Optional, Dict, Any
+import os
 from enum import Enum
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.anthropic import Anthropic
-from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
-from llama_index.embeddings.openai import OpenAIEmbedding
+from typing import Dict, Any
+
 from llama_index.embeddings.dashscope import (
     DashScopeEmbedding,
     DashScopeTextEmbeddingModels,
     DashScopeTextEmbeddingType,
 )
-import os
+from llama_index.llms.anthropic import Anthropic
+from llama_index.llms.dashscope import DashScope
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.azure_openai import AzureOpenAI
+from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+
 
 class LLMType(Enum):
-    GPT4O = "gpt-4-0613"
-    GPT4O_TURBO = "gpt-4-0125-preview"
+    GPT4O = "gpt-4o"
     CLAUDE = "claude-2"
     QWEN = "qwen-plus"
+    AZURE_GPT4O = "gpt-4o"
 
 class EmbeddingType(Enum):
-    OPENAI = "text-embedding-3-large"
     QWEN_DOCUMENT = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V3
     QWEN_QUERY = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V3
+    QWEN_DIMENSION = 1024
+    AZURE_EMBEDDING = "text-embedding-3-large"
+    AZURE_DIMENSION = 1536
 
 class ModelManager:
     _instance = None
@@ -35,7 +40,12 @@ class ModelManager:
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-        self.modelscope_api_key = os.getenv("MODELSCOPE_API_KEY")
+        self.dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
+        # Azure OpenAI credentials
+        # self.azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        # self.azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        self.azure_api_key = "83938a01739642128eea83d1dd0d6e3a"
+        self.azure_endpoint = "https://convertlab-canadaeast.openai.azure.com/"
 
     def get_llm(self, model_type: LLMType, **kwargs):
         """Get LLM model instance by type."""
@@ -49,6 +59,17 @@ class ModelManager:
                 temperature=kwargs.get('temperature', 0),
                 **kwargs
             )
+        elif model_type == LLMType.AZURE_GPT4O:
+            model = OpenAI(
+                model=model_type.value,
+                temperature=kwargs.get('temperature', 0),
+                api_key=self.azure_api_key,
+                api_base=self.azure_endpoint,
+                api_type="azure",
+                api_version="2024-10-21",
+                deployment_name=LLMType.AZURE_GPT4O.value,
+                **kwargs
+            )
         elif model_type == LLMType.CLAUDE:
             model = Anthropic(
                 api_key=self.anthropic_api_key,
@@ -57,8 +78,8 @@ class ModelManager:
                 **kwargs
             )
         elif model_type == LLMType.QWEN:
-            model = ModelScopeLLM(
-                api_key=self.modelscope_api_key,
+            model = DashScope(
+                api_key=self.dashscope_api_key,
                 model=model_type.value,
                 temperature=kwargs.get('temperature', 0),
                 **kwargs
@@ -74,10 +95,14 @@ class ModelManager:
         if model_type.value in self._embedding_cache:
             return self._embedding_cache[model_type.value]
 
-        if model_type == EmbeddingType.OPENAI:
-            model = OpenAIEmbedding(
-                api_key=self.openai_api_key,
+        if model_type == EmbeddingType.AZURE_EMBEDDING:
+            model = AzureOpenAIEmbedding(
                 model=model_type.value,
+                deployment_name=model_type.value,
+                api_key=self.azure_api_key,
+                azure_endpoint=self.azure_endpoint,
+                api_version="2024-10-21",
+                dimensions=EmbeddingType.AZURE_DIMENSION.value,
                 **kwargs
             )
         elif model_type == EmbeddingType.QWEN_DOCUMENT:
