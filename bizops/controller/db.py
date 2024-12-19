@@ -12,12 +12,8 @@ class DBController:
     async def process_database_info(self, file: UploadFile) -> None:
         """Process and store database metadata"""
         try:
-            # Read CSV file
             df = pd.read_csv(file.file)
-
-            # Update PostgreSQL database
             self.postgres_service.update_database_info(df)
-
         except Exception as e:
             raise Exception(f"Failed to process database info: {str(e)}")
         finally:

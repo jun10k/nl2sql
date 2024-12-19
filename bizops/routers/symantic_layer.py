@@ -67,9 +67,9 @@ async def update_database_info(
                     content={"detail": "File must be prefixed with 'db_' for database information upload"}
                 )
             # Process the file
-            result = await db_controller.process_database_info(file)
+            await db_controller.process_database_info(file)
         elif data:
-            result = await db_controller.update_database_info(data.items)
+            await db_controller.update_database_info(data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -78,7 +78,7 @@ async def update_database_info(
             
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
-            content=result
+            content={"message": "Database information updated successfully"}
         )
         
     except Exception as e:

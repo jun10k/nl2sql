@@ -1,4 +1,5 @@
 import pandas as pd
+from pgvector.sqlalchemy import VECTOR
 from sqlalchemy import create_engine, text, ARRAY, String
 from typing import List, Dict, Any
 from bizops.config import settings
@@ -89,6 +90,7 @@ class PostgresService:
                 dtype = {
                     'aliases': ARRAY(String),
                     'keywords': ARRAY(String),
+                    'embedding': VECTOR(1536)
                 }
                 df.to_sql(temp_table, conn, if_exists='replace', index=False, dtype=dtype)
                 
