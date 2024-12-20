@@ -78,101 +78,137 @@ class EmbeddingService:
         except Exception as e:
             raise Exception(f"Failed to process database info: {str(e)}")
 
-    def process_table_file(self, file_path: str, database_name: str) -> Dict[str, Any]:
-        """Process table description CSV file"""
+    def process_table_info(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Process table information and generate embeddings
+        
+        Args:
+            df: DataFrame containing table metadata
+            
+        Returns:
+            DataFrame with embeddings added
+        """
         try:
-            df = pd.read_csv(file_path)
-            required_columns = {'table_name', 'column_name', 'aliases', 'data_type', 'description', 'keywords'}
-            if not all(col in df.columns for col in required_columns):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Table CSV must contain columns: {required_columns}"
-                )
-
-            # Group by table_name
-            tables_processed = 0
-            for table_name, table_df in df.groupby('table_name'):
-                # Create table schema description
-                table_text = f"Table '{table_name}' in database '{database_name}' has the following columns:"
-                column_texts = []
+            if "embedding" not in df.columns:
+                df["embedding"] = None  # Initialize the column
+            
+            # Process each record individually
+            for idx, row in df.iterrows():
+                text_parts = []
                 
-                for _, row in table_df.iterrows():
-                    col_text = f"Column '{row['column_name']}' with type {row['data_type']}"
-                    if pd.notna(row['description']):
-                        col_text += f": {row['description']}"
-                    column_texts.append(col_text)
+                # Add each field to text parts if it exists
+                if 'table_name' in row and row['table_name']:
+                    text_parts.append(f"Table name: {row['table_name']}")
+                
+                if 'column_name' in row and row['column_name']:
+                    text_parts.append(f"Column name: {row['column_name']}")
+                
+                if 'aliases' in row and row['aliases']:
+                    text_parts.append(f"Aliases: {row['aliases']}")
+                
+                if 'data_type' in row and row['data_type']:
+                    text_parts.append(f"Data type: {row['data_type']}")
+                
+                if 'description' in row and row['description']:
+                    text_parts.append(f"Description: {row['description']}")
+                
+                if 'keywords' in row and row['keywords']:
+                    text_parts.append(f"Keywords: {row['keywords']}")
+                
+                # Combine all text parts and generate embedding
+                combined_text = "\n".join(text_parts)
+                embedding = self.embed_model.get_text_embedding(combined_text)
+                df.at[idx, "embedding"] = embedding
+            
+            return df
 
-                # Create embeddings for table schema
-                self._create_embeddings(
-                    texts=[table_text] + column_texts,
-                    metadata={
-                        "database": database_name,
-                        "table": table_name,
-                        "type": "table_schema"
-                    }
-                )
-                tables_processed += 1
-
-            return {
-                "status": "success",
-                "database": database_name,
-                "tables_processed": tables_processed,
-                "columns_processed": len(df)
-            }
-
-        except HTTPException as he:
-            raise he
         except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to process table description file: {str(e)}"
-            )
+            raise Exception(f"Failed to process table info: {str(e)}")
 
-    def process_sample_file(self, file_path: str, database_name: str) -> Dict[str, Any]:
-        """Process sample SQL statements CSV file"""
+    def process_table_details(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Process table details and generate embeddings
+        
+        Args:
+            df: DataFrame containing table metadata
+            
+        Returns:
+            DataFrame with embeddings added
+        """
         try:
-            df = pd.read_csv(file_path)
-            required_columns = {'table_name', 'query', 'description'}
-            if not all(col in df.columns for col in required_columns):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Sample SQL CSV must contain columns: {required_columns}"
-                )
+            if "embedding" not in df.columns:
+                df["embedding"] = None  # Initialize the column
+            
+            # Process each record individually
+            for idx, row in df.iterrows():
+                text_parts = []
+                
+                # Add each field to text parts if it exists
+                if 'table_name' in row and row['table_name']:
+                    text_parts.append(f"Table name: {row['table_name']}")
+                
+                if 'database_name' in row and row['database_name']:
+                    text_parts.append(f"Database: {row['database_name']}")
+                
+                if 'description' in row and row['description']:
+                    text_parts.append(f"Description: {row['description']}")
+                
+                if 'schema' in row and row['schema']:
+                    text_parts.append(f"Schema: {row['schema']}")
+                
+                if 'row_count' in row and row['row_count']:
+                    text_parts.append(f"Number of rows: {row['row_count']}")
+                
+                if 'column_count' in row and row['column_count']:
+                    text_parts.append(f"Number of columns: {row['column_count']}")
+                
+                if 'keywords' in row and row['keywords']:
+                    text_parts.append(f"Keywords: {row['keywords']}")
+                
+                # Combine all text parts and generate embedding
+                combined_text = "\n".join(text_parts)
+                embedding = self.embed_model.get_text_embedding(combined_text)
+                df.at[idx, "embedding"] = embedding
+            
+            return df
 
-            # Process each sample query
-            texts = []
-            for _, row in df.iterrows():
-                # Create natural language description of the query
-                text = f"For table '{row['table_name']}' in database '{database_name}': {row['description']}"
-                texts.append(text)
-
-                # Store the actual SQL query in metadata
-                metadata = {
-                    "database": database_name,
-                    "table": row['table_name'],
-                    "type": "sample_query",
-                    "sql_query": row['query']
-                }
-
-                # Create embedding for this sample
-                self._create_embeddings(
-                    texts=[text],
-                    metadata=metadata
-                )
-
-            return {
-                "status": "success",
-                "database": database_name,
-                "samples_processed": len(df)
-            }
-
-        except HTTPException as he:
-            raise he
         except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to process sample SQL file: {str(e)}"
-            )
+            raise Exception(f"Failed to process table details: {str(e)}")
+
+    def process_query_examples(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Process query examples and generate embeddings
+        
+        Args:
+            df: DataFrame containing query examples
+            
+        Returns:
+            DataFrame with embeddings added
+        """
+        try:
+            if "embedding" not in df.columns:
+                df["embedding"] = None  # Initialize the column
+            
+            # Process each record individually
+            for idx, row in df.iterrows():
+                text_parts = []
+                
+                # Add each field to text parts if it exists
+                if 'table_name' in row and row['table_name']:
+                    text_parts.append(f"Table name: {row['table_name']}")
+                
+                if 'query' in row and row['query']:
+                    text_parts.append(f"SQL query: {row['query']}")
+                
+                if 'description' in row and row['description']:
+                    text_parts.append(f"Description: {row['description']}")
+                
+                # Combine all text parts and generate embedding
+                combined_text = "\n".join(text_parts)
+                embedding = self.embed_model.get_text_embedding(combined_text)
+                df.at[idx, "embedding"] = embedding
+            
+            return df
+
+        except Exception as e:
+            raise Exception(f"Failed to process query examples: {str(e)}")
 
     def _create_embeddings(self, texts: List[str], metadata: Dict) -> None:
         """Create embeddings and store in PostgreSQL vector store"""

@@ -21,3 +21,67 @@ def test_upload_database_info():
     
     assert response.status_code == 201
     assert response.json() == {"message": "Database information updated successfully"}
+
+def test_upload_table_info():
+    """Test uploading table information via CSV"""
+    csv_path = os.path.join(SAMPLE_CSV_DIR, 'tb_info_assets_maintenance.csv')
+    
+    with open(csv_path, 'rb') as f:
+        response = client.post(
+            "/api/v1/symantic-layer/database/update/table-info",
+            files={"file": ("tb_info_assets_maintenance.csv", f, "text/csv")}
+        )
+    
+    assert response.status_code == 201
+    assert response.json() == {"message": "Table information updated successfully"}
+
+def test_upload_table_details():
+    """Test uploading table details via CSV"""
+    # Test with Assets table details
+    csv_path = os.path.join(SAMPLE_CSV_DIR, 'tb_details_Assets.csv')
+    
+    with open(csv_path, 'rb') as f:
+        response = client.post(
+            "/api/v1/symantic-layer/database/update/table-details",
+            files={"file": ("tb_details_Assets.csv", f, "text/csv")}
+        )
+    
+    assert response.status_code == 201
+    assert response.json() == {"message": "Table details updated successfully"}
+    
+    # Test with Maintenance Contracts table details
+    csv_path = os.path.join(SAMPLE_CSV_DIR, 'tb_details_Maintenance_Contracts.csv')
+    
+    with open(csv_path, 'rb') as f:
+        response = client.post(
+            "/api/v1/symantic-layer/database/update/table-details",
+            files={"file": ("tb_details_Maintenance_Contracts.csv", f, "text/csv")}
+        )
+    
+    assert response.status_code == 201
+    assert response.json() == {"message": "Table details updated successfully"}
+    
+    # Test with Third Party Companies table details
+    csv_path = os.path.join(SAMPLE_CSV_DIR, 'tb_details_Third_Party_Companies.csv')
+    
+    with open(csv_path, 'rb') as f:
+        response = client.post(
+            "/api/v1/symantic-layer/database/update/table-details",
+            files={"file": ("tb_details_Third_Party_Companies.csv", f, "text/csv")}
+        )
+    
+    assert response.status_code == 201
+    assert response.json() == {"message": "Table details updated successfully"}
+
+def test_upload_query_examples():
+    """Test uploading query examples via CSV"""
+    csv_path = os.path.join(SAMPLE_CSV_DIR, 'query_examples_asset_maintenance.csv')
+    
+    with open(csv_path, 'rb') as f:
+        response = client.post(
+            "/api/v1/symantic-layer/database/update/query-examples",
+            files={"file": ("query_examples_asset_maintenance.csv", f, "text/csv")}
+        )
+    
+    assert response.status_code == 201
+    assert response.json() == {"message": "Query examples updated successfully"}

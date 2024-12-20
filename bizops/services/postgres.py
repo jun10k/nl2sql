@@ -61,12 +61,12 @@ class PostgresService:
             # Create query_examples table
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS query_examples (
-                    id SERIAL PRIMARY KEY,
                     database_name TEXT[],
                     query TEXT,
                     description TEXT,
                     keywords TEXT[],
-                    embedding VECTOR(1536)
+                    embedding VECTOR(1536),
+                    PRIMARY KEY (database_name, query)
                 )
             """))
             conn.commit()
@@ -79,8 +79,8 @@ class PostgresService:
             df = self.embedding_service.process_database_info(df)
 
             # Convert string to list, then to PostgreSQL array format
-            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')])
-            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')])
+            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
             
             with self.engine.connect() as conn:
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
@@ -115,6 +115,12 @@ class PostgresService:
         """Update table information in PostgreSQL"""
         try:
             temp_table = "temp_table_info"
+            # Add embeddings to the DataFrame
+            df = self.embedding_service.process_table_info(df)
+
+            # Convert string to list, then to PostgreSQL array format
+            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
             
             with self.engine.connect() as conn:
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
@@ -123,23 +129,25 @@ class PostgresService:
                 # Specify the correct data types for array columns
                 dtype = {
                     'aliases': ARRAY(String),
-                    'keywords': ARRAY(String)
+                    'keywords': ARRAY(String),
+                    'embedding': VECTOR(1536)
                 }
                 df.to_sql(temp_table, conn, if_exists='replace', index=False, dtype=dtype)
                 
                 conn.execute(text(f"""
                     INSERT INTO table_info (
-                        database_name, table_name, aliases, description, ddl, keywords
+                        database_name, table_name, aliases, description, ddl, keywords, embedding
                     )
                     SELECT 
-                        database_name, table_name, aliases, description, ddl, keywords
+                        database_name, table_name, aliases, description, ddl, keywords, embedding
                     FROM {temp_table}
                     ON CONFLICT (database_name, table_name)
                     DO UPDATE SET
                         aliases = EXCLUDED.aliases,
                         description = EXCLUDED.description,
                         ddl = EXCLUDED.ddl,
-                        keywords = EXCLUDED.keywords
+                        keywords = EXCLUDED.keywords,
+                        embedding = EXCLUDED.embedding
                 """))
                 
                 conn.execute(text(f"DROP TABLE {temp_table}"))
@@ -151,6 +159,12 @@ class PostgresService:
         """Update table details in PostgreSQL"""
         try:
             temp_table = "temp_table_details"
+            # Add embeddings to the DataFrame
+            df = self.embedding_service.process_table_details(df)
+
+            # Convert string to list, then to PostgreSQL array format
+            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
             
             with self.engine.connect() as conn:
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
@@ -159,25 +173,27 @@ class PostgresService:
                 # Specify the correct data types for array columns
                 dtype = {
                     'aliases': ARRAY(String),
-                    'keywords': ARRAY(String)
+                    'keywords': ARRAY(String),
+                    'embedding': VECTOR(1536)
                 }
                 df.to_sql(temp_table, conn, if_exists='replace', index=False, dtype=dtype)
                 
                 conn.execute(text(f"""
                     INSERT INTO table_details (
                         database_name, table_name, field_name, data_type, 
-                        aliases, description, keywords
+                        aliases, description, keywords, embedding
                     )
                     SELECT 
                         database_name, table_name, field_name, data_type,
-                        aliases, description, keywords
+                        aliases, description, keywords, embedding
                     FROM {temp_table}
                     ON CONFLICT (database_name, table_name, field_name)
                     DO UPDATE SET
                         data_type = EXCLUDED.data_type,
                         aliases = EXCLUDED.aliases,
                         description = EXCLUDED.description,
-                        keywords = EXCLUDED.keywords
+                        keywords = EXCLUDED.keywords,
+                        embedding = EXCLUDED.embedding
                 """))
                 
                 conn.execute(text(f"DROP TABLE {temp_table}"))
@@ -189,6 +205,12 @@ class PostgresService:
         """Update query examples in PostgreSQL"""
         try:
             temp_table = "temp_query_examples"
+            # Add embeddings to the DataFrame
+            df = self.embedding_service.process_query_examples(df)
+
+            # Convert string to list, then to PostgreSQL array format
+            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+            df['database_name'] = df['database_name'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
             
             with self.engine.connect() as conn:
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
@@ -197,15 +219,23 @@ class PostgresService:
                 # Specify the correct data types for array columns
                 dtype = {
                     'database_name': ARRAY(String),
-                    'query': ARRAY(String),
-                    'keywords': ARRAY(String)
+                    'keywords': ARRAY(String),
+                    'embedding': VECTOR(1536)
                 }
                 df.to_sql(temp_table, conn, if_exists='replace', index=False, dtype=dtype)
                 
-                conn.execute(text("""
-                    INSERT INTO query_examples (database_name, query, description, keywords)
-                    SELECT database_name, query, description, keywords
-                    FROM temp_query_examples
+                conn.execute(text(f"""
+                    INSERT INTO query_examples (
+                        database_name, query, description, keywords, embedding
+                    )
+                    SELECT 
+                        database_name, query, description, keywords, embedding
+                    FROM {temp_table}
+                    ON CONFLICT (database_name, query)
+                    DO UPDATE SET
+                        description = EXCLUDED.description,
+                        keywords = EXCLUDED.keywords,
+                        embedding = EXCLUDED.embedding
                 """))
                 
                 conn.execute(text(f"DROP TABLE {temp_table}"))
