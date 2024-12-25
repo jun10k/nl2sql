@@ -13,7 +13,6 @@ router = APIRouter(
 )
 
 db_controller = DBController()
-file_controller = FileController()
 
 # Pydantic models for request validation
 class DatabaseInfo(BaseModel):
@@ -107,9 +106,9 @@ async def update_table_info(
                     content={"detail": "File must be prefixed with 'tb_' for table information upload"}
                 )
             # Process the file
-            result = await db_controller.process_table_info(file, database_name)
+            await db_controller.process_table_info(file, database_name)
         elif data:
-            result = await db_controller.update_table_info(database_name, data.items)
+            await db_controller.update_table_info(database_name, data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -118,13 +117,52 @@ async def update_table_info(
             
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
-            content=result
+            content={"message": "Table information updated successfully"}
         )
         
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": f"Failed to update table info: {str(e)}"}
+        )
+
+
+@router.post("/database/{database_name}/table/{table_name}/update/table-details", status_code=status.HTTP_201_CREATED)
+async def update_table_details(
+        database_name: str,
+        table_name: str,
+        file: Optional[UploadFile] = File(None),
+        data: Optional[UpdateRequest] = Body(None)
+) -> JSONResponse:
+    """
+    Update table details information via CSV file (prefixed with 'tb_details_') or JSON object
+    """
+    try:
+        if file:
+            if not file.filename:
+                raise ValueError("Filename is required")
+            if not file.filename.startswith('tb_details_'):
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={"message": "File name must start with 'tb_details_'"}
+                )
+            await db_controller.process_table_details(file, database_name, table_name)
+        elif data:
+            await db_controller.update_table_details(database_name, table_name, data.items)
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": "Either file or data must be provided"}
+            )
+
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content={"message": "Table details updated successfully"}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"message": str(e)}
         )
 
 @router.post("/database/{database_name}/update/query-examples", status_code=status.HTTP_201_CREATED)
@@ -147,14 +185,19 @@ async def update_query_examples(
                     content={"detail": "File must be prefixed with 'sample_' for query examples upload"}
                 )
             # Process the file
-            result = await db_controller.process_query_examples(file, database_name)
+            await db_controller.process_query_examples(file, database_name)
         elif data:
-            result = await db_controller.update_query_examples(database_name, data.items)
+            await db_controller.update_query_examples(database_name, data.items)
         else:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "Either file or data must be provided"}
             )
+
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content={"message": "Query examples updated successfully"}
+        )
             
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
@@ -165,45 +208,6 @@ async def update_query_examples(
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": f"Failed to update query examples: {str(e)}"}
-        )
-
-@router.post("/database/{database_name}/table/{table_name}/update/table-details", status_code=status.HTTP_201_CREATED)
-async def update_table_details(
-    database_name: str,
-    table_name: str,
-    file: Optional[UploadFile] = File(None),
-    data: Optional[UpdateRequest] = Body(None)
-) -> JSONResponse:
-    """
-    Update table details information via CSV file (prefixed with 'tb_details_') or JSON object
-    """
-    try:
-        if file:
-            if not file.filename:
-                raise ValueError("Filename is required")
-            if not file.filename.startswith('tb_details_'):
-                return JSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content={"message": "File name must start with 'tb_details_'"}
-                )
-            items = await file_controller.process_csv_file(file, TableDetails)
-            await db_controller.update_table_details(database_name, table_name, items)
-        elif data:
-            await db_controller.update_table_details(database_name, table_name, data.items)
-        else:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": "Either file or data must be provided"}
-            )
-        
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={"message": "Table details updated successfully"}
-        )
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": str(e)}
         )
 
 @router.get("/database/{database_name}/table/{table_name}/table-details")
@@ -229,9 +233,7 @@ async def list_databases() -> List[str]:
     try:
         return await db_controller.list_databases()
     except Exception as e:
-        raise Exception(
-            f"Failed to list databases: {str(e)}"
-        )
+        raise Exception(f"Failed to list databases: {str(e)}")
 
 @router.get("/database/{database_name}/tables")
 async def list_tables(database_name: str) -> List[str]:

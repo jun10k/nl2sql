@@ -60,13 +60,13 @@ class EmbeddingService:
                     text_parts.append(f"Database name: {row['database_name']}")
                 
                 if 'aliases' in row and row['aliases']:
-                    text_parts.append(f"Aliases: {row['aliases']}")
+                    text_parts.append(f"Database Aliases: {row['aliases']}")
                 
                 if 'description' in row and row['description']:
-                    text_parts.append(f"Description: {row['description']}")
+                    text_parts.append(f"Database Description: {row['description']}")
                 
                 if 'keywords' in row and row['keywords']:
-                    text_parts.append(f"Keywords: {row['keywords']}")
+                    text_parts.append(f"Database Keywords: {row['keywords']}")
                 
                 # Combine all text parts and generate embedding
                 combined_text = "\n".join(text_parts)
@@ -99,20 +99,14 @@ class EmbeddingService:
                 if 'table_name' in row and row['table_name']:
                     text_parts.append(f"Table name: {row['table_name']}")
                 
-                if 'column_name' in row and row['column_name']:
-                    text_parts.append(f"Column name: {row['column_name']}")
-                
                 if 'aliases' in row and row['aliases']:
-                    text_parts.append(f"Aliases: {row['aliases']}")
-                
-                if 'data_type' in row and row['data_type']:
-                    text_parts.append(f"Data type: {row['data_type']}")
-                
-                if 'description' in row and row['description']:
-                    text_parts.append(f"Description: {row['description']}")
+                    text_parts.append(f"Table Aliases: {row['aliases']}")
                 
                 if 'keywords' in row and row['keywords']:
-                    text_parts.append(f"Keywords: {row['keywords']}")
+                    text_parts.append(f"Table Keywords: {row['keywords']}")
+
+                if 'description' in row and row['description']:
+                    text_parts.append(f"Table Description: {row['description']}")
                 
                 # Combine all text parts and generate embedding
                 combined_text = "\n".join(text_parts)
@@ -142,26 +136,17 @@ class EmbeddingService:
                 text_parts = []
                 
                 # Add each field to text parts if it exists
-                if 'table_name' in row and row['table_name']:
-                    text_parts.append(f"Table name: {row['table_name']}")
-                
-                if 'database_name' in row and row['database_name']:
-                    text_parts.append(f"Database: {row['database_name']}")
-                
-                if 'description' in row and row['description']:
-                    text_parts.append(f"Description: {row['description']}")
-                
-                if 'schema' in row and row['schema']:
-                    text_parts.append(f"Schema: {row['schema']}")
-                
-                if 'row_count' in row and row['row_count']:
-                    text_parts.append(f"Number of rows: {row['row_count']}")
-                
-                if 'column_count' in row and row['column_count']:
-                    text_parts.append(f"Number of columns: {row['column_count']}")
-                
+                if 'field_name' in row and row['field_name']:
+                    text_parts.append(f"Field Name: {row['field_name']}")
+
+                if 'aliases' in row and row['aliases']:
+                    text_parts.append(f"Field Aliases: {row['aliases']}")
+
                 if 'keywords' in row and row['keywords']:
-                    text_parts.append(f"Keywords: {row['keywords']}")
+                    text_parts.append(f"Field Keywords: {row['keywords']}")
+
+                if 'description' in row and row['description']:
+                    text_parts.append(f"Field Description: {row['description']}")
                 
                 # Combine all text parts and generate embedding
                 combined_text = "\n".join(text_parts)
@@ -191,14 +176,17 @@ class EmbeddingService:
                 text_parts = []
                 
                 # Add each field to text parts if it exists
-                if 'table_name' in row and row['table_name']:
-                    text_parts.append(f"Table name: {row['table_name']}")
+                if 'database_name' in row and row['database_name']:
+                    text_parts.append(f"Database Name: {row['database_name']}")
                 
                 if 'query' in row and row['query']:
-                    text_parts.append(f"SQL query: {row['query']}")
+                    text_parts.append(f"Query Example: {row['query']}")
+
+                if 'keywords' in row and row['keywords']:
+                    text_parts.append(f"Query Keywords: {row['keywords']}")
                 
                 if 'description' in row and row['description']:
-                    text_parts.append(f"Description: {row['description']}")
+                    text_parts.append(f"Query Description: {row['description']}")
                 
                 # Combine all text parts and generate embedding
                 combined_text = "\n".join(text_parts)

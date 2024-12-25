@@ -19,31 +19,31 @@ class DBController:
         finally:
             file.file.close()
 
-    async def process_table_info(self, file: UploadFile) -> None:
+    async def process_table_info(self, file: UploadFile, database_name: str) -> None:
         """Process and store table metadata"""
         try:
             df = pd.read_csv(file.file)
-            self.postgres_service.update_table_info(df)
+            self.postgres_service.update_table_info(df, database_name)
         except Exception as e:
             raise Exception(f"Failed to process table info: {str(e)}")
         finally:
             file.file.close()
 
-    async def process_table_details(self, file: UploadFile) -> None:
+    async def process_table_details(self, file: UploadFile, database_name: str, table_name: str) -> None:
         """Process and store table details metadata"""
         try:
             df = pd.read_csv(file.file)
-            self.postgres_service.update_table_details(df)
+            self.postgres_service.update_table_details(df, database_name, table_name)
         except Exception as e:
             raise Exception(f"Failed to process table details: {str(e)}")
         finally:
             file.file.close()
 
-    async def process_query_examples(self, file: UploadFile) -> None:
+    async def process_query_examples(self, file: UploadFile, database_name: str) -> None:
         """Process and store query examples"""
         try:
             df = pd.read_csv(file.file)
-            self.postgres_service.update_query_examples(df)
+            self.postgres_service.update_query_examples(df, database_name)
         except Exception as e:
             raise Exception(f"Failed to process query examples: {str(e)}")
         finally:

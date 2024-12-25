@@ -111,21 +111,26 @@ class PostgresService:
         except Exception as e:
             raise Exception(f"Failed to update database info: {str(e)}")
 
-    def update_table_info(self, df: pd.DataFrame) -> None:
+    def update_table_info(self, df: pd.DataFrame, database_name: str) -> None:
         """Update table information in PostgreSQL"""
         try:
-            temp_table = "temp_table_info"
-            # Add embeddings to the DataFrame
-            df = self.embedding_service.process_table_info(df)
-
-            # Convert string to list, then to PostgreSQL array format
-            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
-            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
-            
             with self.engine.connect() as conn:
+                # Check if the corresponding database info is ready.
+                result = conn.execute(text(f"""SELECT 1 FROM database_info WHERE database_name = '{database_name}' LIMIT 1"""))
+                if result.rowcount == 0:
+                    raise Exception(f"Failed to find corresponding database info for current table.")
+
+                # Add embeddings to the DataFrame
+                df = self.embedding_service.process_table_info(df[df['database_name']==database_name])
+
+                # Convert string to list, then to PostgreSQL array format
+                df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+                df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+
+                # Get the temp table prepared.
+                temp_table = "temp_table_info"
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
                 conn.commit()
-                
                 # Specify the correct data types for array columns
                 dtype = {
                     'aliases': ARRAY(String),
@@ -155,18 +160,28 @@ class PostgresService:
         except Exception as e:
             raise Exception(f"Failed to update table info: {str(e)}")
 
-    def update_table_details(self, df: pd.DataFrame) -> None:
+    def update_table_details(self, df: pd.DataFrame, database_name: str, table_name: str) -> None:
         """Update table details in PostgreSQL"""
         try:
-            temp_table = "temp_table_details"
-            # Add embeddings to the DataFrame
-            df = self.embedding_service.process_table_details(df)
-
-            # Convert string to list, then to PostgreSQL array format
-            df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
-            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
-            
             with self.engine.connect() as conn:
+                # Check if the corresponding database info is ready.
+                result = conn.execute(text(f"""SELECT 1 FROM database_info WHERE database_name = '{database_name}' LIMIT 1"""))
+                if result.rowcount == 0:
+                    raise Exception(f"Failed to find corresponding database for current table.")
+
+                # Check if the corresponding table info is ready.
+                result = conn.execute(text(f"""SELECT 1 FROM table_info WHERE database_name = '{database_name}' and table_name = '{table_name}' LIMIT 1"""))
+                if result.rowcount == 0:
+                    raise Exception(f"Failed to find corresponding table for current details.")
+
+                # Add embeddings to the DataFrame
+                df = self.embedding_service.process_table_details(df[(df['database_name']==database_name) & (df['table_name']==table_name)])
+
+                # Convert string to list, then to PostgreSQL array format
+                df['aliases'] = df['aliases'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+                df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+
+                temp_table = "temp_table_details"
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
                 conn.commit()
                 
@@ -201,18 +216,23 @@ class PostgresService:
         except Exception as e:
             raise Exception(f"Failed to update table details: {str(e)}")
 
-    def update_query_examples(self, df: pd.DataFrame) -> None:
+    def update_query_examples(self, df: pd.DataFrame, database_name: str) -> None:
         """Update query examples in PostgreSQL"""
         try:
-            temp_table = "temp_query_examples"
-            # Add embeddings to the DataFrame
-            df = self.embedding_service.process_query_examples(df)
-
-            # Convert string to list, then to PostgreSQL array format
-            df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
-            df['database_name'] = df['database_name'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
-            
             with self.engine.connect() as conn:
+                # Check if the corresponding database info is ready.
+                result = conn.execute(text(f"""SELECT 1 FROM database_info WHERE database_name = '{database_name}' LIMIT 1"""))
+                if result.rowcount == 0:
+                    raise Exception(f"Failed to find corresponding database info for current table.")
+
+                # Add embeddings to the DataFrame
+                df = self.embedding_service.process_query_examples(df['database_name'==database_name])
+
+                # Convert string to list, then to PostgreSQL array format
+                df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+                df['database_name'] = df['database_name'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+
+                temp_table = "temp_query_examples"
                 conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
                 conn.commit()
                 
