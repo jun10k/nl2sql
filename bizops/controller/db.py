@@ -23,7 +23,7 @@ class DBController:
         """Process and store table metadata"""
         try:
             df = pd.read_csv(file.file)
-            await self.postgres_service.update_table_info(df)
+            self.postgres_service.update_table_info(df)
         except Exception as e:
             raise Exception(f"Failed to process table info: {str(e)}")
         finally:
@@ -33,7 +33,7 @@ class DBController:
         """Process and store table details metadata"""
         try:
             df = pd.read_csv(file.file)
-            await self.postgres_service.update_table_details(df)
+            self.postgres_service.update_table_details(df)
         except Exception as e:
             raise Exception(f"Failed to process table details: {str(e)}")
         finally:
@@ -43,7 +43,7 @@ class DBController:
         """Process and store query examples"""
         try:
             df = pd.read_csv(file.file)
-            await self.postgres_service.update_query_examples(df)
+            self.postgres_service.update_query_examples(df)
         except Exception as e:
             raise Exception(f"Failed to process query examples: {str(e)}")
         finally:
@@ -60,8 +60,7 @@ class DBController:
             df = pd.DataFrame(items)
             
             # Update PostgreSQL database
-            await self.postgres_service.update_database_info(df)
-
+            self.postgres_service.update_database_info(df)
         except Exception as e:
             raise Exception(f"Failed to update database info: {str(e)}")
 
@@ -72,10 +71,7 @@ class DBController:
             df = pd.DataFrame(items)
             
             # Update PostgreSQL database
-            await self.postgres_service.update_table_info(df, database_name)
-            
-            # Update vector database
-            await self.vector_service.update_table_info(df, database_name)
+            self.postgres_service.update_table_info(df, database_name)
         except Exception as e:
             raise Exception(f"Failed to update table info: {str(e)}")
 
@@ -90,10 +86,7 @@ class DBController:
             df = pd.DataFrame(items)
             
             # Update PostgreSQL database
-            await self.postgres_service.update_table_details(df, database_name, table_name)
-            
-            # Update vector database
-            await self.vector_service.update_table_details(df, database_name, table_name)
+            self.postgres_service.update_table_details(df, database_name, table_name)
         except Exception as e:
             raise Exception(f"Failed to update table details: {str(e)}")
     
@@ -101,37 +94,34 @@ class DBController:
         """Update query examples from JSON data"""
         try:
             # Update PostgreSQL database
-            await self.postgres_service.update_query_examples(database_name, items)
-            
-            # Update vector database
-            await self.vector_service.update_query_examples(database_name, items)
+            self.postgres_service.update_query_examples(database_name, items)
         except Exception as e:
             raise Exception(f"Failed to update query examples: {str(e)}")
         
     async def list_databases(self) -> list[str]:
         """List all databases"""
         try:
-            return await self.postgres_service.list_databases()
+            return self.postgres_service.list_databases()
         except Exception as e:
             raise Exception(f"Failed to list databases: {str(e)}")
 
     async def list_tables(self, database_name: str) -> list[str]:
         """List all tables in a database"""
         try:
-            return await self.postgres_service.list_tables(database_name)
+            return self.postgres_service.list_tables(database_name)
         except Exception as e:
             raise Exception(f"Failed to list tables: {str(e)}")
 
     async def get_table_details(self, database_name: str, table_name: str) -> list[dict]:
         """Get table details for a specific table in a database"""
         try:
-            return await self.postgres_service.get_table_details(database_name, table_name)
+            return self.postgres_service.get_table_details(database_name, table_name)
         except Exception as e:
             raise Exception(f"Failed to get table details: {str(e)}")
 
     async def list_query_examples(self, database_name: str, table_name: str) -> list[dict]:
         """List query examples"""
         try:
-            return await self.vector_service.list_query_examples(database_name, table_name)
+            return self.vector_service.list_query_examples(database_name, table_name)
         except Exception as e:
             raise Exception(f"Failed to list query examples: {str(e)}")

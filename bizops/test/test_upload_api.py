@@ -28,7 +28,7 @@ def test_upload_table_info():
     
     with open(csv_path, 'rb') as f:
         response = client.post(
-            "/api/v1/symantic-layer/database/update/table-info",
+            "/api/v1/symantic-layer/database/assets_maintenance/update/table-info",
             files={"file": ("tb_info_assets_maintenance.csv", f, "text/csv")}
         )
     

@@ -4,17 +4,23 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import create_engine, text
 from bizops.config import settings
 from bizops.services.embedding import EmbeddingService
-from llama_index.vector_stores import PGVectorStore
-from llama_index.schema import Document
+from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.core.schema import Document
 
 class VectorService:
     def __init__(self):
         self.engine = create_engine(settings.POSTGRES_URL)
         self.embedding_service = EmbeddingService()
-        self.vector_store = PGVectorStore.from_engine(
-            self.engine,
+        self.vector_store = PGVectorStore.from_params(
+            database="nl2sql_vectors",
+            host=settings.DB_HOST,
+            user=settings.DB_USER,
+            port=settings.DB_PORT,
+            password=settings.DB_PASSWORD,
             table_name="document_vectors",
-            embed_dim=1536  # Using OpenAI's embedding dimension
+            embed_dim=1536,
+            hybrid_search=True,
+            text_search_config="chinese"
         )
 
     def update_database_info(self, df: pd.DataFrame, database_name: str) -> None:
