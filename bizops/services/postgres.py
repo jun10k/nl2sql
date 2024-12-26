@@ -221,12 +221,12 @@ class PostgresService:
         try:
             with self.engine.connect() as conn:
                 # Check if the corresponding database info is ready.
-                result = conn.execute(text(f"""SELECT 1 FROM database_info WHERE database_name = '{database_name}' LIMIT 1"""))
+                result = conn.execute(text(f"""SELECT 1 FROM database_info WHERE database_name='{database_name}' LIMIT 1"""))
                 if result.rowcount == 0:
                     raise Exception(f"Failed to find corresponding database info for current table.")
 
                 # Add embeddings to the DataFrame
-                df = self.embedding_service.process_query_examples(df['database_name'==database_name])
+                df = self.embedding_service.process_query_examples(df[df['database_name'].apply(lambda x: database_name in x)])
 
                 # Convert string to list, then to PostgreSQL array format
                 df['keywords'] = df['keywords'].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)

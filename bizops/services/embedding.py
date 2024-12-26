@@ -178,9 +178,6 @@ class EmbeddingService:
                 # Add each field to text parts if it exists
                 if 'database_name' in row and row['database_name']:
                     text_parts.append(f"Database Name: {row['database_name']}")
-                
-                if 'query' in row and row['query']:
-                    text_parts.append(f"Query Example: {row['query']}")
 
                 if 'keywords' in row and row['keywords']:
                     text_parts.append(f"Query Keywords: {row['keywords']}")

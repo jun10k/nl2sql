@@ -198,11 +198,6 @@ async def update_query_examples(
             status_code=status.HTTP_201_CREATED,
             content={"message": "Query examples updated successfully"}
         )
-            
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content=result
-        )
         
     except Exception as e:
         return JSONResponse(
