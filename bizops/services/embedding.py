@@ -16,7 +16,7 @@ class EmbeddingService:
     
     def __init__(self):
         # Initialize model manager
-        self.model_manager = ModelManager()
+        self.model_manager = ModelManager.get_instance()
         
         # Get embedding model from model manager
         self.embed_model = self.model_manager.get_embedding_model(self._embedding_type)

@@ -31,6 +31,7 @@ class ModelManager:
     _instance = None
     _llm_cache: Dict[str, Any] = {}
     _embedding_cache: Dict[str, Any] = {}
+    _initialized = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -38,14 +39,21 @@ class ModelManager:
         return cls._instance
 
     def __init__(self):
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-        self.dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
-        # Azure OpenAI credentials
-        # self.azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        # self.azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        self.azure_api_key = "83938a01739642128eea83d1dd0d6e3a"
-        self.azure_endpoint = "https://convertlab-canadaeast.openai.azure.com/"
+        if not self._initialized:
+            self.openai_api_key = os.getenv("OPENAI_API_KEY")
+            self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+            self.dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
+            # Azure OpenAI credentials
+            self.azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+            self.azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+            self._initialized = True
+
+    @classmethod
+    def get_instance(cls) -> 'ModelManager':
+        """Get the singleton instance of ModelManager"""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
     def get_llm(self, model_type: LLMType, **kwargs):
         """Get LLM model instance by type."""

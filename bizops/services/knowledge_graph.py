@@ -18,7 +18,7 @@ class KnowledgeGraphService:
         self.storage_context = StorageContext.from_defaults(graph_store=self.graph_store)
         
         # Initialize models from ModelManager
-        model_manager = ModelManager()
+        model_manager = ModelManager.get_instance()
         self.embed_model = model_manager.get_embedding_model(EmbeddingType.AZURE_EMBEDDING)
         self.llm = model_manager.get_llm(LLMType.AZURE_GPT4O)
         
