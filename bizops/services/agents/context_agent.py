@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional
-from uuid7 import uuid7
+from uuid_extensions import uuid7, uuid7str
 import time
 from enum import Enum
 from bizops.services.vector import VectorService

@@ -1,16 +1,13 @@
 from typing import List, Dict, Any, Optional
-from llama_index import (
+from llama_index.core import (
     KnowledgeGraphIndex,
     StorageContext,
     load_index_from_storage,
-    ServiceContext
+    load_indices_from_storage,
+    load_graph_from_storage,
 )
-from llama_index.schema import Document, BaseNode
-from llama_index.graph_stores import SimpleGraphStore
-from llama_index.storage.storage_context import StorageContext
-from llama_index.embeddings import OpenAIEmbedding
-from sqlalchemy import create_engine
-from bizops.config import settings
+from llama_index.core.graph_stores import SimpleGraphStore
+from bizops.pkg.models import ModelManager, EmbeddingType, LLMType
 import os
 
 class KnowledgeGraphService:
@@ -20,9 +17,10 @@ class KnowledgeGraphService:
         self.graph_store = SimpleGraphStore()
         self.storage_context = StorageContext.from_defaults(graph_store=self.graph_store)
         
-        # Initialize embedding model
-        self.embed_model = OpenAIEmbedding()
-        self.service_context = ServiceContext.from_defaults(embed_model=self.embed_model)
+        # Initialize models from ModelManager
+        model_manager = ModelManager()
+        self.embed_model = model_manager.get_embedding_model(EmbeddingType.AZURE_EMBEDDING)
+        self.llm = model_manager.get_llm(LLMType.AZURE_GPT4O)
         
         # Load or create knowledge graph index
         self.index = self._load_or_create_index()
@@ -34,16 +32,17 @@ class KnowledgeGraphService:
             if os.path.exists("storage"):
                 return load_index_from_storage(
                     storage_context=self.storage_context,
-                    service_context=self.service_context
+                    llm=self.llm
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Failed to load index: {str(e)}")
         
         # Create new index if loading fails
         return KnowledgeGraphIndex(
             [],
             storage_context=self.storage_context,
-            service_context=self.service_context
+            llm=self.llm,
+            embed_model=self.embed_model
         )
 
     def query_knowledge_graph(self, 

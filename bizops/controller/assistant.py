@@ -1,10 +1,10 @@
 from typing import Dict, Any, Optional
 from fastapi import WebSocket
-from uuid7 import uuid7
+from uuid_extensions import uuid7, uuid7str
 import time
 from bizops.services.agents.intention_agent import IntentionAgent
 from bizops.services.agents.planner_agent import PlannerAgent
-from bizops.services.agents.context_agent import ContextAgent, ContextType
+from bizops.services.agents.context_agent import ContextAgent
 
 class AssistantController:
     def __init__(self):

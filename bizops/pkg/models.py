@@ -44,13 +44,15 @@ class ModelManager:
         # Azure OpenAI credentials
         # self.azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
         # self.azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        self.azure_api_key = "83938a01739642128eea83d1dd0d6e3a"
+        self.azure_endpoint = "https://convertlab-canadaeast.openai.azure.com/"
 
     def get_llm(self, model_type: LLMType, **kwargs):
         """Get LLM model instance by type."""
         if model_type.value in self._llm_cache:
             return self._llm_cache[model_type.value]
 
-        if model_type in [LLMType.GPT4O, LLMType.GPT4O_TURBO]:
+        if model_type in [LLMType.GPT4O]:
             model = OpenAI(
                 api_key=self.openai_api_key,
                 model=model_type.value,
