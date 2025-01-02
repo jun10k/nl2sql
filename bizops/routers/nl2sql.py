@@ -13,7 +13,7 @@ router = APIRouter(
 assistant_controller = AssistantController()
 
 class CompletionsRequest(BaseModel):
-    prompt: str
+    query: str
     context: Optional[Dict[str, Any]] = None
 
 class WhisperRequest(BaseModel):
@@ -39,7 +39,7 @@ def chat_completions(request: CompletionsRequest):
     """
     try:
         return assistant_controller.chat_completions(
-            prompt=request.prompt,
+            prompt=request.query,
             context=request.context
         )
     except Exception as e:
@@ -71,7 +71,7 @@ async def chat(websocket: WebSocket):
             # Receive the chat request
             data = await websocket.receive_json()
             request = ChatRequest(**data)
-            
+
             # Process chat message using controller
             response = await assistant_controller.chat(
                 websocket=websocket,
@@ -79,10 +79,10 @@ async def chat(websocket: WebSocket):
                 session_id=request.session_id,
                 context=request.context
             )
-            
+
             # Send response
             await websocket.send_json(response)
-            
+
     except Exception as e:
         await websocket.send_json({
             "error": str(e)

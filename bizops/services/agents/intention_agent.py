@@ -22,11 +22,11 @@ class IntentionAgent:
     def __init__(self):
         self.intentions: Dict[str, Dict[str, Any]] = {}
 
-    def analyze_completion_intention(self, prompt: str, 
-                                  context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def analyze_completion_intention(self, query: str, 
+                                     session_id: str,
+                                     context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Analyze intention for completion API requests
-        Always creates a new intention without considering history
         """
         try:
             intention_id = str(uuid7())
@@ -39,7 +39,8 @@ class IntentionAgent:
                 "type": "completion",
                 "source": {
                     "type": "prompt",
-                    "content": prompt
+                    "content": query,
+                    "session_id": session_id
                 },
                 "analysis": {
                     "primary_intent": IntentionType.SQL_QUERY.value,
@@ -70,12 +71,12 @@ class IntentionAgent:
         except Exception as e:
             raise Exception(f"Error analyzing completion intention: {str(e)}")
 
-    def analyze_chat_intention(self, message: str, session_id: str,
-                             context: Optional[Dict[str, Any]] = None,
-                             chat_history: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def analyze_chat_intention(self, message: str, 
+                               session_id: str,
+                               context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Analyze intention for chat API requests
-        Considers intention history from session context
+        Considers intention history from context
         May create multiple related intentions
         """
         try:
@@ -83,12 +84,9 @@ class IntentionAgent:
             current_time = time.strftime("%Y-%m-%dT%H:%M:%S+08:00")
             
             # Get intention history from context if available
-            intention_history = []
-            if context and "intention_history" in context:
-                intention_history = context["intention_history"]
+            intention_history = context.get("intention_history", []) if context else []
             
-            # TODO: Implement actual intention analysis logic
-            # This is a placeholder implementation
+            # Create primary intention
             primary_intention = {
                 "id": intention_id,
                 "type": "chat",
@@ -116,12 +114,13 @@ class IntentionAgent:
                 "metadata": {
                     "intention_id": intention_id,
                     "timestamp": current_time,
-                    "version": 1,
-                    "session_id": session_id
+                    "version": 1
                 }
             }
             
-            # Check if we need to create additional intentions based on the message
+            self.intentions[intention_id] = primary_intention
+            
+            # Predict and create additional intentions if needed
             additional_intentions = self._predict_additional_intentions(
                 message, primary_intention, intention_history
             )
@@ -129,24 +128,14 @@ class IntentionAgent:
             # Update relationships
             if additional_intentions:
                 primary_intention["relationships"]["child_intentions"] = [
-                    i["id"] for i in additional_intentions
+                    intention["id"] for intention in additional_intentions
                 ]
+                
                 for intention in additional_intentions:
                     intention["relationships"]["parent_intention"] = primary_intention["id"]
                     self.intentions[intention["id"]] = intention
             
-            self.intentions[intention_id] = primary_intention
-            
-            # Return both primary and additional intentions
-            return {
-                "primary_intention": primary_intention,
-                "additional_intentions": additional_intentions,
-                "metadata": {
-                    "intention_id": intention_id,
-                    "timestamp": current_time,
-                    "total_intentions": len(additional_intentions) + 1
-                }
-            }
+            return primary_intention
             
         except Exception as e:
             raise Exception(f"Error analyzing chat intention: {str(e)}")
@@ -157,90 +146,59 @@ class IntentionAgent:
         """
         Predict additional intentions based on message and history
         """
-        try:
-            additional_intentions = []
-            current_time = time.strftime("%Y-%m-%dT%H:%M:%S+08:00")
-            
-            # TODO: Implement actual prediction logic
-            # This is a placeholder implementation
-            if "explain" in message.lower():
-                # Add an explanation intention
-                explanation_id = str(uuid7())
-                explanation_intention = {
-                    "id": explanation_id,
-                    "type": "chat",
-                    "source": {
-                        "type": "derived",
-                        "content": message,
-                        "session_id": primary_intention["source"]["session_id"]
-                    },
-                    "analysis": {
-                        "primary_intent": IntentionType.EXPLANATION.value,
-                        "sub_intents": [],
-                        "entities": {},
-                        "is_executable": False,
-                        "execution_requirements": {
-                            "needs_clarification": False,
-                            "missing_parameters": []
-                        }
-                    },
-                    "status": IntentionStatus.PENDING.value,
-                    "relationships": {
-                        "parent_intention": primary_intention["id"],
-                        "child_intentions": [],
-                        "related_intentions": []
-                    },
-                    "metadata": {
-                        "intention_id": explanation_id,
-                        "timestamp": current_time,
-                        "version": 1,
-                        "session_id": primary_intention["source"]["session_id"]
-                    }
-                }
-                additional_intentions.append(explanation_intention)
-            
-            return additional_intentions
-            
-        except Exception as e:
-            raise Exception(f"Error predicting additional intentions: {str(e)}")
+        # TODO: Implement actual prediction logic
+        # This is a placeholder implementation
+        return []
 
-    def get_intention(self, intention_id: str) -> Dict[str, Any]:
+    def get_intention(self, intention_id: str) -> Optional[Dict[str, Any]]:
         """
         Retrieve a specific intention
         """
-        if intention_id not in self.intentions:
-            raise Exception("Invalid intention ID")
-        return self.intentions[intention_id]
+        return self.intentions.get(intention_id)
 
     def get_related_intentions(self, intention_id: str) -> List[Dict[str, Any]]:
         """
         Get all intentions related to the given intention
         """
-        if intention_id not in self.intentions:
-            raise Exception("Invalid intention ID")
+        intention = self.get_intention(intention_id)
+        if not intention:
+            return []
             
-        intention = self.intentions[intention_id]
-        related_ids = (
-            intention["relationships"]["child_intentions"] +
-            intention["relationships"]["related_intentions"]
-        )
-        if intention["relationships"]["parent_intention"]:
-            related_ids.append(intention["relationships"]["parent_intention"])
-            
-        return [self.intentions[i] for i in related_ids if i in self.intentions]
+        related_intentions = []
+        relationships = intention["relationships"]
+        
+        # Get parent intention
+        if relationships["parent_intention"]:
+            parent = self.get_intention(relationships["parent_intention"])
+            if parent:
+                related_intentions.append(parent)
+        
+        # Get child intentions
+        for child_id in relationships["child_intentions"]:
+            child = self.get_intention(child_id)
+            if child:
+                related_intentions.append(child)
+                
+        # Get other related intentions
+        for related_id in relationships["related_intentions"]:
+            related = self.get_intention(related_id)
+            if related:
+                related_intentions.append(related)
+                
+        return related_intentions
 
     def update_intention_status(self, intention_id: str, 
                               status: IntentionStatus,
-                              result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                              result: Optional[Dict[str, Any]] = None) -> bool:
         """
         Update intention status and optionally store its result
         """
-        if intention_id not in self.intentions:
-            raise Exception("Invalid intention ID")
+        intention = self.get_intention(intention_id)
+        if not intention:
+            return False
             
-        intention = self.intentions[intention_id]
         intention["status"] = status.value
         if result:
             intention["result"] = result
             
-        return intention
+        return True
