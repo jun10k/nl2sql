@@ -1,12 +1,11 @@
-from typing import Dict, Any, Optional
-from fastapi import WebSocket, HTTPException
+from typing import Dict, Any, Optional, List, Tuple
+from fastapi import WebSocket
 from uuid_extensions import uuid7, uuid7str
 import time
 from bizops.services.agents.intention_agent import IntentionAgent
 from bizops.services.agents.planner_agent import PlannerAgent
 from bizops.services.agents.context_agent import ContextAgent
 from bizops.services.session_service import SessionService
-from typing import List
 
 class AssistantController:
     def __init__(self):
@@ -15,9 +14,11 @@ class AssistantController:
         self.context_agent = ContextAgent()
         self.session_service = SessionService()
 
-    def chat_completions(self, query: str, context: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+    def chat_completions(self, query: str, context: Optional[Dict[str, Any]] = None, 
+                        session_id: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """
         Handle synchronous chat completions requests
+        Returns (response, error). If error is not None, response will be None.
         """
         try:
             # Get or create session
@@ -28,7 +29,7 @@ class AssistantController:
             else:
                 session = self.session_service.get_session(session_id)
                 if not session:
-                    raise HTTPException(status_code=404, detail="Session not found or expired")
+                    return None, "Session not found or expired"
                 context = session.context
 
             # Analyze user intention
@@ -75,16 +76,16 @@ class AssistantController:
                 session.update_context(response["context"])
 
             # Add to chat history
-            self._add_to_chat_history(session_id, query, response)
+            success, error = self._add_to_chat_history(session_id, query, response)
+            if not success:
+                return None, error
 
-            return response
+            return response, None
 
-        except HTTPException as he:
-            raise he
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            return None, f"Error in chat completions: {str(e)}"
 
-    async def handle_websocket_chat(self, websocket: WebSocket, message: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def handle_websocket_chat(self, websocket: WebSocket, message: str, context: Optional[Dict[str, Any]] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """
         Handle WebSocket chat messages
         """
@@ -98,52 +99,53 @@ class AssistantController:
             if context:
                 session.update_context(context)
 
-            response = self.chat_completions(
+            response, error = self.chat_completions(
                 query=message,
                 context=session.context,
                 session_id=session.session_id
             )
 
-            return response
+            return response, error
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            return None, f"Error in websocket chat: {str(e)}"
 
-    def end_session(self, session_id: str) -> bool:
+    def end_session(self, session_id: str) -> Tuple[bool, Optional[str]]:
         """
         End a chat session
+        Returns (success, error). If error is not None, success will be False.
         """
         return self.session_service.end_session(session_id)
 
-    def whisper(self, instruction: str, data: Optional[Dict[str, Any]] = None, 
-                     context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def get_chat_history(self, session_id: str) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
         """
-        Handle whisper requests for system instructions
+        Retrieve chat history for a given session
+        Returns (history, error). If error is not None, history will be None.
         """
-        try:
-            # TODO: Implement actual whisper logic here
-            response_text = f"Processed instruction: {instruction}"
-            
-            return {
-                "text": response_text,
-                "data": {
-                    "instruction_type": "system_command",
-                    "processed": True,
-                    "instruction_data": data
-                },
-                "context": context,
-                "metadata": {
-                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S+08:00"),
-                    "request_id": str(uuid7())
-                }
-            }
-        except Exception as e:
-            raise Exception(f"Error in whisper: {str(e)}")
+        return self.session_service.get_chat_history(session_id)
 
-    async def chat(self, websocket: WebSocket, message: str, session_id: Optional[str] = None,
-                  context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _add_to_chat_history(self, session_id: str, message: str, 
+                           response: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+        """
+        Add a chat interaction to the session history
+        Returns (success, error). If error is not None, success will be False.
+        """
+        chat_message = {
+            "user": message,
+            "assistant": response["text"],
+            "metadata": {
+                "intention_id": response["metadata"]["intention_id"],
+                "request_id": response["metadata"]["request_id"]
+            }
+        }
+        return self.session_service.add_to_chat_history(session_id, chat_message)
+
+    async def chat(self, websocket: WebSocket, message: str, 
+                  session_id: Optional[str] = None,
+                  context: Optional[Dict[str, Any]] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """
         Handle WebSocket chat messages
+        Returns (response, error). If error is not None, response will be None.
         """
         try:
             # Get or create session
@@ -154,7 +156,7 @@ class AssistantController:
             else:
                 session = self.session_service.get_session(session_id)
                 if not session:
-                    raise HTTPException(status_code=404, detail="Session not found or expired")
+                    return None, "Session not found or expired"
                 context = session.context
 
             # Analyze chat intention
@@ -196,27 +198,33 @@ class AssistantController:
             if response["context"]:
                 session.update_context(response["context"])
 
-            return response
+            # Add to chat history
+            success, error = self._add_to_chat_history(session_id, message, response)
+            if not success:
+                return None, error
+
+            return response, None
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            return None, f"Error in chat: {str(e)}"
 
-    def get_chat_history(self, session_id: str) -> List[Dict[str, Any]]:
+    def whisper(self, instruction: str, data: Optional[Dict[str, Any]] = None, 
+                context: Optional[Dict[str, Any]] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """
-        Retrieve chat history for a given session
+        Handle whisper requests for system instructions
+        Returns (response, error). If error is not None, response will be None.
         """
-        return self.session_service.get_chat_history(session_id)
-
-    def _add_to_chat_history(self, session_id: str, message: str, response: Dict[str, Any]) -> None:
-        """
-        Add a chat interaction to the session history
-        """
-        chat_message = {
-            "user": message,
-            "assistant": response["text"],
-            "metadata": {
-                "intention_id": response["metadata"]["intention_id"],
-                "request_id": response["metadata"]["request_id"]
+        try:
+            # Process whisper instruction
+            response = {
+                "text": f"Processed whisper: {instruction}",
+                "data": data,
+                "context": context,
+                "metadata": {
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+                    "request_id": str(uuid7())
+                }
             }
-        }
-        self.session_service.add_to_chat_history(session_id, chat_message)
+            return response, None
+        except Exception as e:
+            return None, f"Error in whisper: {str(e)}"
